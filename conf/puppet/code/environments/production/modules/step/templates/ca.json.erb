@@ -1,0 +1,30 @@
+{
+    "root": "/usr/local/lib/step/certs/root_ca.crt",
+    "federatedRoots": [],
+    "crt": "/usr/local/lib/step/certs/intermediate_ca.crt",
+    "key": "/usr/local/lib/step/secrets/intermediate_ca_key",
+    "address": ":443",
+    "dnsNames": [
+        "127.0.0.1",
+        "localhost",
+        "<%= scope["dns_name"] %>",
+        "<%= scope["dns_full_name"] %>"
+    ],
+    "logger": {
+        "format": "json"
+    },
+    "authority": {
+        "provisioners": [
+            <%= scope["provisioners"] %>
+        ]
+    },
+    "tls": {
+        "cipherSuites": [
+          "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305",
+          "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"
+        ],
+        "minVersion": 1.2,
+        "maxVersion": 1.2,
+        "renegotiation": false
+    }
+  }

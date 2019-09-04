@@ -1,0 +1,166 @@
+static_resources:
+  listeners:
+  - name: web-svc-listener
+    address:
+      socket_address:
+        address: 0.0.0.0
+        port_value: 443
+    filter_chains:
+    - filters:
+      - name: envoy.http_connection_manager
+        config:
+          codec_type: AUTO
+          stat_prefix: ingress_http
+          route_config:
+            name: web-svc
+            virtual_hosts:
+            - name: web-svc
+              domains: ["*"]
+              routes:
+              - match: {prefix: "/"}
+                route: {cluster: web-svc}
+              require_tls: EXTERNAL_ONLY
+          http_filters:
+          - name: envoy.router
+      tls_context:
+        common_tls_context:
+          tls_certificate_sds_secret_configs:
+          - name: web.emojivoto.local
+            sds_config:
+              api_config_source:
+                api_type: GRPC
+                grpc_services:
+                  envoy_grpc:
+                    cluster_name: sds_server_uds
+  - name: grpc-egress
+    address:
+      socket_address:
+        address: 127.0.0.1
+        port_value: 8000
+    filter_chains:
+    - filters:
+      - name: envoy.http_connection_manager
+        config:
+          codec_type: AUTO
+          stat_prefix: grpc-egress
+          route_config:
+            name: grpc-egress
+            virtual_hosts:
+            - name: grpc-egress
+              domains: ["*"]
+              routes:
+              - match: 
+                  prefix: "/emojivoto.v1.EmojiService/"
+                route:
+                  cluster: emoji-svc
+                  host_rewrite: emoji.emojivoto.local
+              - match: 
+                  prefix: "/emojivoto.v1.VotingService/"
+                route:
+                  cluster: voting-svc
+                  host_rewrite: voting.emojivoto.local
+              require_tls: NONE
+            request_headers_to_add:
+            - header: {key: "x-forwarded-proto", value: "https"}
+              append: false
+          http_filters:
+          - name: envoy.router
+  clusters:
+  - name: web-svc
+    connect_timeout: 0.25s
+    type: strict_dns
+    lb_policy: round_robin
+    load_assignment:
+      cluster_name: envoy
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: localhost
+                port_value: 8080
+  - name: emoji-svc
+    connect_timeout: 5s
+    type: strict_dns
+    lb_policy: round_robin
+    http2_protocol_options: {}
+    load_assignment:
+      cluster_name: envoy
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: emoji.emojivoto.local
+                port_value: 443
+    tls_context:
+      sni: web.emojivoto.local
+      common_tls_context:
+        tls_params:
+          tls_minimum_protocol_version: TLSv1_2
+          tls_maximum_protocol_version: TLSv1_3
+          cipher_suites: "[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]"
+        tls_certificate_sds_secret_configs:
+        - name: web.emojivoto.local
+          sds_config:
+            api_config_source:
+              api_type: GRPC
+              grpc_services:
+                envoy_grpc:
+                  cluster_name: sds_server_uds
+        validation_context_sds_secret_config:
+          name: trusted_ca
+          sds_config:
+            api_config_source:
+              api_type: GRPC
+              grpc_services:
+                envoy_grpc:
+                  cluster_name: sds_server_uds
+  - name: voting-svc
+    connect_timeout: 5s
+    type: strict_dns
+    lb_policy: round_robin
+    http2_protocol_options: {}
+    load_assignment:
+      cluster_name: envoy
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: voting.emojivoto.local
+                port_value: 443
+    tls_context:
+      sni: voting.emojivoto.local
+      common_tls_context:
+        tls_params:
+          tls_minimum_protocol_version: TLSv1_2
+          tls_maximum_protocol_version: TLSv1_3
+          cipher_suites: "[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]"
+        tls_certificate_sds_secret_configs:
+        - name: web.emojivoto.local
+          sds_config:
+            api_config_source:
+              api_type: GRPC
+              grpc_services:
+                envoy_grpc:
+                  cluster_name: sds_server_uds
+        validation_context_sds_secret_config:
+          name: trusted_ca
+          sds_config:
+            api_config_source:
+              api_type: GRPC
+              grpc_services:
+                envoy_grpc:
+                  cluster_name: sds_server_uds
+  - name: sds_server_uds
+    connect_timeout: 0.25s
+    http2_protocol_options: {}
+    load_assignment:
+      cluster_name: sds_server_uds
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              pipe:
+                path: /tmp/sds.unix

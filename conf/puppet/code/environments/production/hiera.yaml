@@ -1,0 +1,14 @@
+---
+version: 5
+defaults:               # Used for any hierarchy level that omits these keys.
+  datadir: data         # This path is relative to hiera.yaml's directory.
+  data_hash: yaml_data  # Use the built-in YAML backend.
+
+# Unique human-readable name and paths relative to datadir.
+hierarchy: 
+  - name: "Per-node data"
+    path: "nodes/%{trusted.certname}.yaml"
+  - name: "Per-group data"
+    path: "groups/%{facts.group}.yaml"
+  - name: "Common data"
+    path: "common.yaml"

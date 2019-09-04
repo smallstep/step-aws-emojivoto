@@ -1,0 +1,13 @@
+{
+    "network": "unix",
+    "address": "/tmp/sds.unix",
+    "provisioner": {
+        "issuer": "<%= scope["issuer"] %>",
+        "kid": "<%= scope["kid"] %>",
+        "ca-url": "<%= scope["ca_url"] %>",
+        "root": "/usr/local/lib/step/certs/root_ca.crt"
+    },
+    "logger": {
+        "format": "json"
+    }
+}
