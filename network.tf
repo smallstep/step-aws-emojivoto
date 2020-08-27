@@ -15,14 +15,14 @@ resource "aws_vpc_dhcp_options" "emojivoto" {
 }
 
 resource "aws_vpc_dhcp_options_association" "emojivoto" {
-  vpc_id          = "${aws_vpc.emojivoto.id}"
-  dhcp_options_id = "${aws_vpc_dhcp_options.emojivoto.id}"
+  vpc_id          = aws_vpc.emojivoto.id
+  dhcp_options_id = aws_vpc_dhcp_options.emojivoto.id
 }
 
 # Create a VPC subnet, we will use this subnet with an internet gateway to allow
 # public traffic
 resource "aws_subnet" "emojivoto" {
-  vpc_id     = "${aws_vpc.emojivoto.id}"
+  vpc_id     = aws_vpc.emojivoto.id
   cidr_block = "10.0.0.0/24"
 
   tags = {
@@ -34,7 +34,7 @@ resource "aws_subnet" "emojivoto" {
 resource "aws_security_group" "emojivoto" {
   name        = "emojivoto"
   description = "Allow SSH, TLS, and Puppet inbound traffic"
-  vpc_id      = "${aws_vpc.emojivoto.id}"
+  vpc_id      = aws_vpc.emojivoto.id
 
   ingress {
     from_port   = 22
@@ -76,7 +76,7 @@ resource "aws_security_group" "emojivoto" {
 resource "aws_security_group" "emojivoto_web" {
   name        = "emojivoto_web"
   description = "Allow TLS traffic"
-  vpc_id      = "${aws_vpc.emojivoto.id}"
+  vpc_id      = aws_vpc.emojivoto.id
 
   ingress {
     from_port   = 443
@@ -93,17 +93,17 @@ resource "aws_security_group" "emojivoto_web" {
 
 
 resource "aws_internet_gateway" "emojivoto" {
-  vpc_id = "${aws_vpc.emojivoto.id}"
+  vpc_id = aws_vpc.emojivoto.id
   tags = {
     Name = "emojivoto"
   }
 }
 
 resource "aws_route_table" "emojivoto" {
-  vpc_id = "${aws_vpc.emojivoto.id}"
+  vpc_id = aws_vpc.emojivoto.id
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = "${aws_internet_gateway.emojivoto.id}"
+    gateway_id = aws_internet_gateway.emojivoto.id
   }
   tags = {
     Name = "emojivoto"
@@ -111,6 +111,6 @@ resource "aws_route_table" "emojivoto" {
 }
 
 resource "aws_route_table_association" "emojivoto" {
-  subnet_id      = "${aws_subnet.emojivoto.id}"
-  route_table_id = "${aws_route_table.emojivoto.id}"
+  subnet_id      = aws_subnet.emojivoto.id
+  route_table_id = aws_route_table.emojivoto.id
 }
