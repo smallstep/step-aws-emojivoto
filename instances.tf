@@ -15,8 +15,8 @@ resource "aws_instance" "puppet" {
   ]
 
   # VPC
-  subnet_id              = "${aws_subnet.emojivoto.id}"
-  vpc_security_group_ids = ["${aws_security_group.emojivoto.id}"]
+  subnet_id              = aws_subnet.emojivoto.id
+  vpc_security_group_ids = [aws_security_group.emojivoto.id]
 
   # Required to use remote-exec
   associate_public_ip_address = true
@@ -34,7 +34,7 @@ resource "aws_instance" "puppet" {
       type        = "ssh"
       user        = "ubuntu"
       host        = aws_instance.puppet.public_ip
-      private_key = "${file("~/.ssh/terraform")}"
+      private_key = file("~/.ssh/terraform")
     }
 
     inline = [
@@ -54,7 +54,7 @@ resource "aws_instance" "puppet" {
       type        = "ssh"
       user        = "ubuntu"
       host        = aws_instance.puppet.public_ip
-      private_key = "${file("~/.ssh/terraform")}"
+      private_key = file("~/.ssh/terraform")
     }
 
     source      = "conf/puppet/code/environments"
@@ -72,8 +72,8 @@ resource "aws_instance" "ca" {
   ]
 
   # VPC
-  subnet_id              = "${aws_subnet.emojivoto.id}"
-  vpc_security_group_ids = ["${aws_security_group.emojivoto.id}"]
+  subnet_id              = aws_subnet.emojivoto.id
+  vpc_security_group_ids = [aws_security_group.emojivoto.id]
 
   # Required to use remote-exec
   associate_public_ip_address = true
@@ -91,7 +91,7 @@ resource "aws_instance" "ca" {
       type        = "ssh"
       user        = "ubuntu"
       host        = aws_instance.ca.public_ip
-      private_key = "${file("~/.ssh/terraform")}"
+      private_key = file("~/.ssh/terraform")
     }
 
     inline = [
@@ -104,16 +104,23 @@ resource "aws_instance" "ca" {
       "sudo puppet agent --server puppet.emojivoto.local",
     ]
   }
+}
+
+resource "null_resource" "ca" {
+  triggers = {
+    ca               = aws_instance.ca.instance_state
+    puppet_public_ip = aws_instance.puppet.public_ip
+  }
 
   # Clean puppet certificate on destroy
   provisioner "remote-exec" {
-    when       = "destroy"
-    on_failure = "continue"
+    when       = destroy
+    on_failure = continue
     connection {
       type        = "ssh"
       user        = "ubuntu"
-      host        = aws_instance.puppet.public_ip
-      private_key = "${file("~/.ssh/terraform")}"
+      host        = self.triggers.puppet_public_ip
+      private_key = file("~/.ssh/terraform")
     }
     inline = [
       "sudo rm /var/lib/puppet/ssl/ca/signed/ca.emojivoto.local.pem"
@@ -135,10 +142,10 @@ resource "aws_instance" "web" {
   ]
 
   # VPC
-  subnet_id = "${aws_subnet.emojivoto.id}"
+  subnet_id = aws_subnet.emojivoto.id
   vpc_security_group_ids = [
-    "${aws_security_group.emojivoto.id}",
-    "${aws_security_group.emojivoto_web.id}"
+    aws_security_group.emojivoto.id,
+    aws_security_group.emojivoto_web.id
   ]
 
   # Required to use remote-exec
@@ -157,7 +164,7 @@ resource "aws_instance" "web" {
       type        = "ssh"
       user        = "ubuntu"
       host        = aws_instance.web.public_ip
-      private_key = "${file("~/.ssh/terraform")}"
+      private_key = file("~/.ssh/terraform")
     }
 
     inline = [
@@ -170,16 +177,23 @@ resource "aws_instance" "web" {
       "sudo puppet agent --server puppet.emojivoto.local",
     ]
   }
+}
+  
+resource "null_resource" "web" {
+  triggers = {
+    web              = aws_instance.web.instance_state
+    puppet_public_ip = aws_instance.puppet.public_ip
+  }
 
   # Clean puppet certificate on destroy
   provisioner "remote-exec" {
-    when       = "destroy"
-    on_failure = "continue"
+    when       = destroy
+    on_failure = continue
     connection {
       type        = "ssh"
       user        = "ubuntu"
-      host        = aws_instance.puppet.public_ip
-      private_key = "${file("~/.ssh/terraform")}"
+      host        = self.triggers.puppet_public_ip
+      private_key = file("~/.ssh/terraform")
     }
     inline = [
       "sudo rm /var/lib/puppet/ssl/ca/signed/web.emojivoto.local.pem"
@@ -197,8 +211,8 @@ resource "aws_instance" "emoji" {
   ]
 
   # VPC
-  subnet_id              = "${aws_subnet.emojivoto.id}"
-  vpc_security_group_ids = ["${aws_security_group.emojivoto.id}"]
+  subnet_id              = aws_subnet.emojivoto.id
+  vpc_security_group_ids = [aws_security_group.emojivoto.id]
 
   # Required to use remote-exec
   associate_public_ip_address = true
@@ -216,7 +230,7 @@ resource "aws_instance" "emoji" {
       type        = "ssh"
       user        = "ubuntu"
       host        = aws_instance.emoji.public_ip
-      private_key = "${file("~/.ssh/terraform")}"
+      private_key = file("~/.ssh/terraform")
     }
 
     inline = [
@@ -229,16 +243,23 @@ resource "aws_instance" "emoji" {
       "sudo puppet agent --server puppet.emojivoto.local",
     ]
   }
+}
+
+resource "null_resource" "emoji" {
+  triggers = {
+    emoji            = aws_instance.emoji.instance_state
+    puppet_public_ip = aws_instance.puppet.public_ip
+  }
 
   # Clean puppet certificate on destroy
   provisioner "remote-exec" {
-    when       = "destroy"
-    on_failure = "continue"
+    when       = destroy
+    on_failure = continue
     connection {
       type        = "ssh"
       user        = "ubuntu"
-      host        = aws_instance.puppet.public_ip
-      private_key = "${file("~/.ssh/terraform")}"
+      host        = self.triggers.puppet_public_ip
+      private_key = file("~/.ssh/terraform")
     }
     inline = [
       "sudo rm /var/lib/puppet/ssl/ca/signed/emoji.emojivoto.local.pem"
@@ -256,8 +277,8 @@ resource "aws_instance" "voting" {
   ]
 
   # VPC
-  subnet_id              = "${aws_subnet.emojivoto.id}"
-  vpc_security_group_ids = ["${aws_security_group.emojivoto.id}"]
+  subnet_id              = aws_subnet.emojivoto.id
+  vpc_security_group_ids = [aws_security_group.emojivoto.id]
 
   # Required to use remote-exec
   associate_public_ip_address = true
@@ -275,7 +296,7 @@ resource "aws_instance" "voting" {
       type        = "ssh"
       user        = "ubuntu"
       host        = aws_instance.voting.public_ip
-      private_key = "${file("~/.ssh/terraform")}"
+      private_key = file("~/.ssh/terraform")
     }
 
     inline = [
@@ -288,16 +309,23 @@ resource "aws_instance" "voting" {
       "sudo puppet agent --server puppet.emojivoto.local",
     ]
   }
+}
+
+resource "null_resource" "voting" {
+  triggers = {
+    voting           = aws_instance.voting.instance_state
+    puppet_public_ip = aws_instance.puppet.public_ip
+  }
 
   # Clean puppet certificate on destroy
   provisioner "remote-exec" {
-    when       = "destroy"
-    on_failure = "continue"
+    when       = destroy
+    on_failure = continue
     connection {
       type        = "ssh"
       user        = "ubuntu"
-      host        = aws_instance.puppet.public_ip
-      private_key = "${file("~/.ssh/terraform")}"
+      host        = self.triggers.puppet_public_ip
+      private_key = file("~/.ssh/terraform")
     }
     inline = [
       "sudo rm /var/lib/puppet/ssl/ca/signed/voting.emojivoto.local.pem"
