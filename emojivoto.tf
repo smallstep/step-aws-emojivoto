@@ -1,10 +1,5 @@
 terraform {
-  backend "remote" {
-    organization = "Smallstep"
-
-    workspaces {
-      name = "Emojivoto"
-    }
+  backend "local" {
   }
 }
 
