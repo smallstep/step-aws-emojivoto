@@ -93,36 +93,13 @@ $ chmod 400 ~/.ssh/terraform*
 
 ### Terraform
 
-Terraform uses a backend (hosted by [Hashicorp](https://app.terraform.io/session)) to store state information about managed infrastrucutre as well as manage concurrency locks to allow only one team member to perform changes at a time. The CLI needs a user configuration as outlined below. Create a user account and org at [app.terraform.io](https://app.terraform.io/session) and grab a user token. For more details please see [Hashicorp's Terraform CLI docs](https://www.terraform.io/docs/commands/cli-config.html).
-
-> Note: Terraform won't strictly require a backend when being used by a single developer/operator
-
-```bash
-$ cat ~/.terraformrc
-credentials "app.terraform.io" {
-  token = "<terraform user token goes here>"
-}
-```
-
-Once the `~/.terraformrc` is in place the Terraform backends needs to be initialized. Before running the `init` command Terraform needs to be configured with the proper workplace, org, and ssh public key.
+Before running the `init` command Terraform needs to be configured with your ssh public key.
 
 ```bash
 diff --git a/aws-emojivoto/emojivoto.tf b/aws-emojivoto/emojivoto.tf
 index b510dcb..33ff92d 100644
 --- a/aws-emojivoto/emojivoto.tf
 +++ b/aws-emojivoto/emojivoto.tf
-@@ -1,9 +1,9 @@
- terraform {
-   backend "remote" {
--    organization = "Smallstep"
-+    organization = "<my org>"
-
-     workspaces {
--      name = "Emojivoto"
-+      name = "<my workspace: e.g. Step-AWS-Integration>"
-     }
-   }
- }
 @@ -17,7 +17,7 @@ provider "aws" {
  # Create an SSH key pair to connect to our instances
  resource "aws_key_pair" "terraform" {
@@ -139,13 +116,8 @@ Once AWS CLI and Terraform CLI & definitions are in place, we can initialize the
 ```bash
 $ terraform init
 Initializing the backend...
-Backend configuration changed!
 
-Terraform has detected that the configuration specified for the backend
-has changed. Terraform will now check for existing state in the backends.
-
-
-Successfully configured the backend "remote"! Terraform will automatically
+Successfully configured the backend "local"! Terraform will automatically
 use this backend unless the backend configuration changes.
 
 Initializing provider plugins...
@@ -158,21 +130,6 @@ Now Terraform is ready to go. The `apply` command will print out a long executio
 
 ```bash
 $ terraform apply
-Acquiring state lock. This may take a few moments...
-
-An execution plan has been generated and is shown below.
-Resource actions are indicated with the following symbols:
-  + create
-
-Terraform will perform the following actions:
-Acquiring state lock. This may take a few moments...
-
-An execution plan has been generated and is shown below.
-Resource actions are indicated with the following symbols:
-  + create
-
-Terraform will perform the following actions:
-Acquiring state lock. This may take a few moments...
 
 An execution plan has been generated and is shown below.
 Resource actions are indicated with the following symbols:
